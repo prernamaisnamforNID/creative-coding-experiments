@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anni Albers : Series from Design for Wall Hanging</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+:root {
+  --paper: #C8B89A;
+  --paper-dark: #B5A080;
+  --ink: #2C2318;
+  --ink-light: #5C4A35;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background-color: var(--paper);
+  font-family: 'Courier Prime', monospace;
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 36px 20px 60px;
+}
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:200;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px,
+    rgba(80,50,10,0.012) 2px, rgba(80,50,10,0.012) 4px);
+}
+
+/* ── HEADER ── */
+header {
+  text-align:center; margin-bottom:28px;
+  border-bottom:2px solid var(--ink-light); padding-bottom:20px;
+}
+header h1 {
+  font-family:'DM Serif Display',serif;
+  font-size: clamp(22px,4vw,42px); font-weight:400;
+  color:var(--ink); letter-spacing:.02em; line-height:1.2;
+}
+header h1 span {
+  display:block; font-family:'Courier Prime',monospace;
+  font-size:.53em; letter-spacing:.22em; color:var(--ink-light);
+  margin-top:6px; text-transform:uppercase;
+}
+
+/* ── TABS ── */
+.tabs {
+  display:flex; justify-content:center;
+  margin-bottom:36px;
+  border-bottom:2px solid var(--ink-light);
+}
+.tab-btn {
+  font-family:'Courier Prime',monospace; font-size:11px;
+  letter-spacing:.25em; text-transform:uppercase;
+  color:var(--ink-light); background:transparent; border:none;
+  border-bottom:3px solid transparent; padding:10px 30px;
+  cursor:pointer; margin-bottom:-2px;
+  transition: color .2s, border-color .2s;
+}
+.tab-btn:hover { color:var(--ink); }
+.tab-btn.active { color:var(--ink); border-bottom:3px solid var(--ink); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* ── DESIGN TAB ── */
+.page-layout {
+  display:flex; align-items:flex-start; justify-content:center;
+  gap:40px; max-width:1100px; margin:0 auto;
+}
+.canvas-wrapper {
+  flex-shrink:0; display:flex; flex-direction:column;
+  align-items:center; gap:12px;
+}
+.canvas-wrapper canvas {
+  display:block;
+  box-shadow:4px 4px 0 var(--paper-dark),8px 8px 0 rgba(0,0,0,.12);
+  border:1px solid var(--ink-light);
+}
+.canvas-hint {
+  font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--ink-light); opacity:.7;
+}
+.side-panel {
+  display:flex; flex-direction:column; gap:22px;
+  min-width:220px; max-width:260px;
+}
+.panel-title {
+  font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+  color:var(--ink-light); border-bottom:1px solid var(--ink-light);
+  padding-bottom:6px; margin-bottom:2px;
+}
+.scheme-card {
+  cursor:pointer; border:1.5px solid transparent; padding:10px;
+  transition:border-color .2s, background .2s;
+  background:rgba(255,255,255,.08);
+}
+.scheme-card:hover { background:rgba(255,255,255,.18); border-color:var(--ink-light); }
+.scheme-card.active { border-color:var(--ink); background:rgba(255,255,255,.22); }
+.scheme-card-top { display:flex; align-items:center; gap:10px; margin-bottom:7px; }
+.scheme-number { font-size:10px; letter-spacing:.15em; color:var(--ink-light); min-width:20px; }
+.scheme-name { font-size:10.5px; letter-spacing:.07em; color:var(--ink); text-transform:uppercase; }
+.swatches { display:flex; gap:3px; margin-bottom:6px; }
+.swatch { width:22px; height:22px; border:1px solid rgba(0,0,0,.15); flex-shrink:0; }
+.ref-placeholder {
+  font-size:9px; letter-spacing:.1em; color:var(--ink-light);
+  text-align:center; opacity:0; height:0; overflow:hidden;
+  transition:height .4s, opacity .4s;
+}
+.scheme-card.active .ref-placeholder {
+  opacity:1; height:26px; display:flex; align-items:center; justify-content:center;
+}
+
+/* ── REAL ARTWORK PANEL ── */
+.artwork-panel {
+  flex-shrink:0; display:flex; flex-direction:column;
+  align-items:center; gap:12px;
+  width:240px;
+}
+.artwork-panel-title {
+  font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+  color:var(--ink-light); border-bottom:1px solid var(--ink-light);
+  padding-bottom:6px; width:100%;
+}
+.artwork-frame {
+  position:relative; width:100%;
+  border:1px solid var(--ink-light);
+  box-shadow:4px 4px 0 var(--paper-dark), 8px 8px 0 rgba(0,0,0,.12);
+  background:#1a1a1a; overflow:hidden;
+}
+.artwork-frame img {
+  width:100%; height:auto; display:block;
+  transition: opacity 0.4s ease;
+}
+.artwork-frame img.fade-out { opacity:0; }
+.artwork-meta { width:100%; }
+.artwork-meta-title {
+  font-family:'DM Serif Display',serif;
+  font-size:12px; color:var(--ink); line-height:1.4; margin-bottom:3px;
+}
+.artwork-meta-sub {
+  font-size:9px; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--ink-light); opacity:.75; line-height:1.6;
+}
+.artwork-moma-link {
+  display:inline-block; margin-top:7px;
+  font-size:8.5px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--ink-light); text-decoration:none;
+  border-bottom:1px solid var(--ink-light); padding-bottom:1px;
+  transition:color .2s, border-color .2s;
+}
+.artwork-moma-link:hover { color:var(--ink); border-color:var(--ink); }
+
+/* ── ABOUT TAB ── */
+.about-wrap { max-width:880px; margin:0 auto; }
+
+.about-pullquote {
+  text-align:center; font-family:'DM Serif Display',serif;
+  font-size:clamp(17px,2.6vw,26px); font-weight:400; color:var(--ink);
+  line-height:1.55; padding:28px 48px;
+  border-top:1px solid var(--ink-light); border-bottom:1px solid var(--ink-light);
+  margin-bottom:44px; position:relative;
+}
+.about-pullquote::before {
+  content:'\201C'; font-size:6em; color:var(--ink-light); opacity:.2;
+  position:absolute; top:-12px; left:12px; font-family:'DM Serif Display',serif; line-height:1;
+}
+
+.about-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:44px 36px;
+}
+@media(max-width:640px){ .about-grid { grid-template-columns:1fr; } }
+
+.ag-full { grid-column:1/-1; }
+
+.ag-block { display:flex; flex-direction:column; gap:13px; }
+
+.ag-year {
+  font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+  color:var(--ink-light); border-bottom:1px solid var(--ink-light); padding-bottom:4px;
+}
+.ag-heading {
+  font-family:'DM Serif Display',serif; font-size:clamp(15px,1.9vw,21px);
+  font-weight:400; color:var(--ink); line-height:1.3;
+}
+.ag-text {
+  font-size:12.5px; line-height:1.88; color:var(--ink); opacity:.83;
+}
+.ag-text em { font-style:italic; }
+
+/* artwork frames */
+.ag-art {
+  border:1px solid var(--ink-light);
+  box-shadow:4px 4px 0 var(--paper-dark), 7px 7px 0 rgba(0,0,0,.08);
+  background:#1a1a1a;
+  display:block; width:100%;
+}
+.ag-caption {
+  font-size:9px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-light); margin-top:6px; opacity:.7;
+}
+
+.woven-rule { width:100%; height:14px; margin:4px 0; }
+
+/* timeline */
+.timeline {
+  border-left:2px solid var(--ink-light); padding-left:22px; margin-left:6px;
+  display:flex; flex-direction:column; gap:0;
+}
+.tl-item { position:relative; padding-bottom:22px; }
+.tl-item::before {
+  content:''; position:absolute; left:-29px; top:5px;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--ink-light); border:2px solid var(--paper);
+}
+.tl-year { font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-light); margin-bottom:3px; }
+.tl-text { font-size:12px; line-height:1.75; color:var(--ink); opacity:.82; }
+.tl-text em { font-style:italic; }
+
+footer {
+  text-align:center; margin-top:48px; font-size:8px;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--ink-light); opacity:.6;
+  width:100%; display:block;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Anni Albers<span>Series from Design for Wall Hanging</span></h1>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('design',this)">Design Series</button>
+  <button class="tab-btn" onclick="switchTab('about',this)">About Anni</button>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  TAB 1 — DESIGN                        -->
+<!-- ═══════════════════════════════════════ -->
+<div id="tab-design" class="tab-content active">
+  <div class="page-layout">
+    <div class="canvas-wrapper">
+      <div id="p5-canvas"></div>
+      <div class="canvas-hint">← click a scheme to change palette →</div>
+    </div>
+    <div class="side-panel">
+      <div class="panel-title">Color Schemes</div>
+      <div id="scheme-cards"></div>
+    </div>
+    <div class="artwork-panel">
+      <div class="artwork-panel-title">Real Work · MoMA Collection</div>
+      <div class="artwork-frame">
+        <img id="real-artwork-img" src="https://publicdelivery.org/wp-content/uploads/2017/12/Anni-Albers-Wallhanging-1926-silk-72-×-48-in.-182.9-×-122-cm.jpg" alt="Anni Albers artwork">
+      </div>
+      <div class="artwork-meta">
+        <div class="artwork-meta-title" id="real-artwork-title">Wall Hanging, 1926</div>
+        <div class="artwork-meta-sub" id="real-artwork-sub">Silk · 72 × 48 in.<br>MoMA, New York</div>
+        <a class="artwork-moma-link" id="real-artwork-link" href="https://www.moma.org/collection/works/3749?artist_id=96&page=1&sov_referrer=artist" target="_blank">View at MoMA →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  TAB 2 — ABOUT                         -->
+<!-- ═══════════════════════════════════════ -->
+<div id="tab-about" class="tab-content">
+<div class="about-wrap">
+
+  <div class="about-pullquote">
+    Threads…caught me…against my will….<br>But circumstances held me to threads and they won me over.
+  </div>
+
+  <div class="about-grid">
+
+    <!-- Portrait — real photograph -->
+    <div class="ag-block">
+      <img class="ag-art"
+        src="https://publicdelivery.org/wp-content/uploads/2018/01/Anni-Albers-works-in-her-weaving-studio-at-Black-Mountain-College-in-1937.jpg"
+        alt="Anni Albers works in her weaving studio at Black Mountain College in 1937"
+        style="width:100%; display:block; filter:sepia(18%) contrast(1.05);
+               border:1px solid var(--ink-light);
+               box-shadow:4px 4px 0 var(--paper-dark), 8px 8px 0 rgba(0,0,0,.08);">
+      <div class="ag-caption">Anni Albers in her weaving studio · Black Mountain College · 1937</div>
+    </div>
+
+    <!-- Introduction text -->
+    <div class="ag-block">
+      <div class="ag-text">
+        Annelise Fleischmann was born on 12 June 1899, in Berlin, into a prosperous Jewish family.
+        Drawn to art from childhood, she trained under Impressionist painter Martin Brandenburg
+        before the pull of something more structured — more tactile — led her elsewhere.
+        <br><br>
+        In 1922 she enrolled at the Bauhaus in Weimar. The school's masters, believing women
+        belonged at the loom rather than in architecture or painting, directed her to the weaving
+        workshop. What began as institutional constraint became a lifelong vocation.
+        <br><br>
+        She later said she had no idea what weaving even was when she arrived. Within two years
+        she was the most technically gifted student in the workshop.
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="ag-full" style="margin-top:36px">
+      <div class="ag-year" style="margin-bottom:22px">Life & Legacy · Timeline</div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-year">1899</div>
+          <div class="tl-text">Born Annelise Fleischmann in Berlin into a prosperous Jewish family.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-year">1922</div>
+          <div class="tl-text">Enrolls at the Bauhaus in Weimar. Directed to the weaving workshop.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-year">1925</div>
+          <div class="tl-text">Marries the painter Josef Albers. Bauhaus moves to Dessau. Anni appointed junior master of the weaving workshop.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-year">1933</div>
+          <div class="tl-text">Bauhaus closes under Nazi pressure. Anni and Josef emigrate to the USA, joining Black Mountain College, North Carolina.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-year">1949</div>
+          <div class="tl-text">Solo retrospective at the Museum of Modern Art, New York — the first dedicated to a textile artist. Moves to New Haven, Connecticut.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-year">1950s – 60s</div>
+          <div class="tl-text">Travels extensively in Mexico and Peru. Begins printmaking, producing over 100 prints. Publishes <em>On Designing</em> (1959) and <em>On Weaving</em> (1965).</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-year">1972</div>
+          <div class="tl-text">Josef Albers dies. Anni continues to weave and exhibit internationally.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-year">1994</div>
+          <div class="tl-text">Anni Albers dies in Orange, Connecticut, aged 94. Her work is held by MoMA, the Tate, the Bauhaus-Archiv, and institutions worldwide.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end about-grid -->
+</div><!-- end about-wrap -->
+</div><!-- end tab-about -->
+
+<footer>Anni Albers · 1899 – 1994 · Interactive Reconstruction</footer>
+
+<script>
+// ─────────────────────────────────────────────
+//  TAB SWITCHING
+// ─────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+//  COLOR SCHEMES
+// ─────────────────────────────────────────────
+const schemes = [
+  {
+    name: "Design for Wall Hanging · 1926",
+    colors: { olive:"#8E847E", black:"#313136", beige:"#D2C9C0", gold:"#92855B", gray:"#6E6C7A", goldlight:"#D5C798", dkgray:"#383D57" }
+  },
+  {
+    name: "Design for Smyrna Rug · 1925",
+    colors: { olive:"#B5B0AA", black:"#1E1E1E", beige:"#D6D0C8", gold:"#C0392B", gray:"#7F7F7F", goldlight:"#E8E4DE", dkgray:"#4A4A4A" }
+  },
+  {
+    name: "Preliminary Design for Wall Hanging · 1926",
+    colors: { olive:"#C9956A", black:"#1A1A1A", beige:"#F0EBE0", gold:"#C0392B", gray:"#A07850", goldlight:"#E8D9C0", dkgray:"#5C3D20" }
+  },
+  {
+    name: "Design for Wall Hanging · 1925",
+    colors: { olive:"#9B8FA0", black:"#3A6B5A", beige:"#F5F0D8", gold:"#E8C910", gray:"#6B8C7A", goldlight:"#F0E050", dkgray:"#4A7060" }
+  },
+  {
+    name: "Design for Wall Hanging · 1926",
+    colors: { olive:"#8B6050", black:"#1C1C1C", beige:"#EDE8DC", gold:"#C0392B", gray:"#6B4030", goldlight:"#D4C4B0", dkgray:"#3D2010" }
+  },
+];
+
+let C = Object.assign({}, schemes[0].colors);
+
+// ─────────────────────────────────────────────
+//  DRAW ANNI PATTERN (shared by p5 + about canvases)
+// ─────────────────────────────────────────────
+function drawPattern(ctx, cols, W, H) {
+  const sx = W / 560, sy = H / 480;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  function cell(xi, yi, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(
+      Math.round(xi * sx), Math.round(yi * sy),
+      Math.max(1, Math.round(70 * sx)), Math.max(1, Math.round(20 * sy))
+    );
+  }
+
+  for (let yi = 0; yi <= 480; yi += 20) {
+    for (let xi = 0; xi <= 560; xi += 70) {
+      if (xi===0&&(yi===0||yi===40||yi===80))                                                          cell(xi,yi,cols.olive);
+      else if(xi===0&&(yi===20||yi===60||yi===100||yi===240||yi===280||yi===320||yi===360||yi===400||yi===440)) cell(xi,yi,cols.black);
+      else if(xi===0&&yi>100&&yi<240)                                                                  cell(xi,yi,cols.beige);
+      else if(xi===0&&(yi===260||yi===300||yi===340))                                                  cell(xi,yi,cols.gold);
+      else if(xi===0&&(yi===380||yi===420||yi===460))                                                  cell(xi,yi,cols.gray);
+      else if(xi===70&&yi>=0&&yi<120)                                                                  cell(xi,yi,cols.beige);
+      else if(xi>=70&&xi<210&&(yi===120||yi===160||yi===200))                                          cell(xi,yi,cols.gold);
+      else if(xi>=70&&xi<210&&(yi===140||yi===180||yi===220))                                          cell(xi,yi,cols.black);
+      else if(xi===70&&(yi===240||yi===280||yi===320))                                                 cell(xi,yi,cols.gold);
+      else if(xi===70&&(yi===260||yi===300||yi===340))                                                 cell(xi,yi,cols.black);
+      else if(xi===70&&yi>340&&yi<=480)                                                                cell(xi,yi,cols.goldlight);
+      else if(xi>=140&&xi<280&&(yi===0||yi===40||yi===80))                                             cell(xi,yi,cols.gold);
+      else if(xi===140&&(yi===20||yi===60||yi===100))                                                  cell(xi,yi,cols.black);
+      else if(xi===140&&yi>=240&&yi<360)                                                               cell(xi,yi,cols.beige);
+      else if(xi===140&&(yi===360||yi===400||yi===440))                                                cell(xi,yi,cols.gold);
+      else if(xi===140&&(yi===380||yi===420||yi===460))                                                cell(xi,yi,cols.gray);
+      else if(xi===210&&(yi===20||yi===60||yi===100||yi===240||yi===280||yi===320))                    cell(xi,yi,cols.gray);
+      else if(xi===210&&yi>=120&&yi<240)                                                               cell(xi,yi,cols.goldlight);
+      else if(xi===210&&(yi===260||yi===300||yi===340))                                                cell(xi,yi,cols.black);
+      else if(xi>=210&&xi<420&&(yi===360||yi===400||yi===440))                                         cell(xi,yi,cols.gray);
+      else if(xi===210&&(yi===380||yi===420||yi===460))                                                cell(xi,yi,cols.gold);
+      else if(xi===280&&yi>=0&&yi<240) {
+        if(yi===20||yi===60||yi===100||yi===140||yi===180||yi===220)                                   cell(xi,yi,cols.gold);
+        else if(yi===0||yi===40||yi===80||yi===120||yi===160||yi===200)                                cell(xi,yi,cols.gray);
+      }
+      else if(xi===280&&yi>=240&&yi<360)                                                               cell(xi,yi,cols.dkgray);
+      else if(xi>=280&&xi<420&&(yi===380||yi===420||yi===460))                                         cell(xi,yi,cols.black);
+      else if((xi===350||xi===490)&&(yi===0||yi===40||yi===80))                                        cell(xi,yi,cols.black);
+      else if(xi===350&&(yi===20||yi===60||yi===100))                                                  cell(xi,yi,cols.gray);
+      else if(xi===350&&yi>=120&&yi<240)                                                               cell(xi,yi,cols.dkgray);
+      else if(xi===350&&(yi===240||yi===280||yi===320))                                                cell(xi,yi,cols.gray);
+      else if(xi===350&&(yi===260||yi===300||yi===340))                                                cell(xi,yi,cols.gold);
+      else if(xi===420&&yi<120)                                                                        cell(xi,yi,cols.goldlight);
+      else if(xi===420&&(yi===120||yi===160||yi===200||yi===240||yi===280||yi===320))                  cell(xi,yi,cols.black);
+      else if(xi===420&&(yi===140||yi===180||yi===220||yi===260||yi===300||yi===340))                  cell(xi,yi,cols.gray);
+      else if(xi===420&&yi>=360&&yi<480)                                                               cell(xi,yi,cols.dkgray);
+      else if(xi===490&&(yi===20||yi===60||yi===100||yi===140||yi===180||yi===220))                    cell(xi,yi,cols.gold);
+      else if(xi===490&&(yi===120||yi===160||yi===200))                                                cell(xi,yi,cols.black);
+      else if(xi===490&&yi>=240&&yi<360)                                                               cell(xi,yi,cols.beige);
+      else if(xi===490&&(yi===360||yi===400||yi===440))                                                cell(xi,yi,cols.black);
+      else if(xi===490&&(yi===380||yi===420||yi===460))                                                cell(xi,yi,cols.gray);
+      else                                                                                              cell(xi,yi,'#ffffff');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ABOUT PAGE — static canvas artworks
+// ─────────────────────────────────────────────
+function initAboutArt() {
+  const c1 = document.getElementById('about-art-1');
+  if (c1) drawPattern(c1.getContext('2d'), schemes[0].colors, 320, 280);
+
+  const c2 = document.getElementById('about-art-2');
+  if (c2) drawPattern(c2.getContext('2d'), schemes[1].colors, 320, 280);
+}
+window.addEventListener('load', initAboutArt);
+
+// ─────────────────────────────────────────────
+//  REAL ARTWORK DATA (per scheme)
+// ─────────────────────────────────────────────
+const realArtworks = [
+  {
+    img:   'https://publicdelivery.org/wp-content/uploads/2017/12/Anni-Albers-Wallhanging-1926-silk-72-×-48-in.-182.9-×-122-cm.jpg',
+    title: 'Wall Hanging, 1926',
+    sub:   'Silk · 72 × 48 in.\nMoMA, New York · 399.1951',
+    href:  'https://www.moma.org/collection/works/3749?artist_id=96&page=1&sov_referrer=artist'
+  },
+  {
+    img:   'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEizNxuoegfs6FTB_Wq-3TQp6GfJMy-4X3krLJaQBIqPCEQ8dg0G3YTCIEfjAQvxWlgxiN1ANCrAm8vuQZTAX0gVE_yL38x_99pdCbhqPejsM4X4Yl1QSnKoGZhqVP0b1VaV95Vzx_khTrUji50/s1600/AlbersSmyrnaRug1925.jpg',
+    title: 'Design for Smyrna Rug, 1925',
+    sub:   'Watercolor, gouache & graphite\nMoMA, New York · 394.1951',
+    href:  'https://www.moma.org/collection/works/3735?artist_id=96&page=1&sov_referrer=artist'
+  },
+  {
+    img:   'https://blue-stocking.org.uk/wp-content/uploads/2008/12/albers2.jpg',
+    title: 'Preliminary Design for Wall Hanging, 1926',
+    sub:   'Gouache & pencil on paper\nMoMA, New York · 398.1951',
+    href:  'https://www.moma.org/collection/works/3746?artist_id=96&page=1&sov_referrer=artist'
+  },
+  {
+    img:   'https://publicdelivery.org/wp-content/uploads/2017/12/Anni-Albers-Wallhanging-1925-silk-cotton-acetate-50-%C3%97-38-in.-127-%C3%97-96.5-cm.jpg',
+    title: 'Wallhanging, 1925',
+    sub:   'Silk, cotton & acetate · 50 × 38 in.\nDie Neue Sammlung, Munich · 363.26',
+    href:  'https://www.moma.org/collection/works/3746?artist_id=96&page=1&sov_referrer=artist'
+  },
+  {
+    img:   'https://publicdelivery.org/wp-content/uploads/2017/12/Anni-Albers-Black-White-Red-19261964-cotton-and-silk-69-×-461⁄2-in.-175-×-118-cm.jpg',
+    title: 'Design for Wall Hanging, 1925',
+    sub:   'Gouache on paper · 13 3/16 × 10 7/16 in.\nMoMA, New York · 395.1951',
+    href:  'https://www.moma.org/collection/works/3738?artist_id=96&page=1&sov_referrer=artist'
+  }
+];
+
+function switchArtwork(index) {
+  const a = realArtworks[index];
+  const img = document.getElementById('real-artwork-img');
+  const title = document.getElementById('real-artwork-title');
+  const sub = document.getElementById('real-artwork-sub');
+  const link = document.getElementById('real-artwork-link');
+  img.classList.add('fade-out');
+  setTimeout(() => {
+    img.src = a.img;
+    img.alt = a.title;
+    title.textContent = a.title;
+    sub.innerHTML = a.sub.replace('\n', '<br>');
+    link.href = a.href;
+    img.onload = () => img.classList.remove('fade-out');
+    // fallback in case already cached
+    if (img.complete) img.classList.remove('fade-out');
+  }, 300);
+}
+
+// ─────────────────────────────────────────────
+//  SCHEME CARDS
+// ─────────────────────────────────────────────
+function buildCards() {
+  const container = document.getElementById('scheme-cards');
+  schemes.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'scheme-card' + (i === 0 ? ' active' : '');
+
+    const swatchHTML = Object.values(s.colors)
+      .map(col => `<div class="swatch" style="background:${col}"></div>`).join('');
+
+    card.innerHTML = `
+      <div class="scheme-card-top">
+        <span class="scheme-number">0${i+1}</span>
+        <span class="scheme-name">${s.name}</span>
+      </div>
+      <div class="swatches">${swatchHTML}</div>
+      <div class="ref-placeholder">Bauhaus Archive · Berlin</div>
+    `;
+
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.scheme-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      C = Object.assign({}, s.colors);
+      switchArtwork(i);
+    });
+
+    container.appendChild(card);
+  });
+}
+buildCards();
+
+// ─────────────────────────────────────────────
+//  P5.JS — DESIGN TAB SKETCH
+// ─────────────────────────────────────────────
+new p5(function(p) {
+  p.setup = function() {
+    p.createCanvas(560, 480).parent('p5-canvas');
+    p.noStroke();
+  };
+
+  p.draw = function() {
+    p.background(0);
+    for (let y = 0; y <= 480; y += 20) {
+      for (let x = 0; x <= 560; x += 70) {
+        if(x===0&&(y===0||y===40||y===80))                                                    {p.fill(C.olive);     p.rect(x,y,70,20);}
+        else if(x===0&&(y===20||y===60||y===100||y===240||y===280||y===320||y===360||y===400||y===440)) {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===0&&y>100&&y<240)                                                          {p.fill(C.beige);     p.rect(x,y,70,20);}
+        else if(x===0&&(y===260||y===300||y===340))                                           {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x===0&&(y===380||y===420||y===460))                                           {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else if(x===70&&y>=0&&y<120)                                                          {p.fill(C.beige);     p.rect(x,y,70,20);}
+        else if(x>=70&&x<210&&(y===120||y===160||y===200))                                    {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x>=70&&x<210&&(y===140||y===180||y===220))                                    {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===70&&(y===240||y===280||y===320))                                          {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x===70&&(y===260||y===300||y===340))                                          {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===70&&y>340&&y<=480)                                                        {p.fill(C.goldlight); p.rect(x,y,70,20);}
+        else if(x>=140&&x<280&&(y===0||y===40||y===80))                                       {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x===140&&(y===20||y===60||y===100))                                           {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===140&&y>=240&&y<360)                                                       {p.fill(C.beige);     p.rect(x,y,70,20);}
+        else if(x===140&&(y===360||y===400||y===440))                                         {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x===140&&(y===380||y===420||y===460))                                         {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else if(x===210&&(y===20||y===60||y===100||y===240||y===280||y===320))                {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else if(x===210&&y>=120&&y<240)                                                       {p.fill(C.goldlight); p.rect(x,y,70,20);}
+        else if(x===210&&(y===260||y===300||y===340))                                         {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x>=210&&x<420&&(y===360||y===400||y===440))                                   {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else if(x===210&&(y===380||y===420||y===460))                                         {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x===280&&y>=0&&y<240) {
+          if(y===20||y===60||y===100||y===140||y===180||y===220)                              {p.fill(C.gold);      p.rect(x,y,70,20);}
+          else if(y===0||y===40||y===80||y===120||y===160||y===200)                           {p.fill(C.gray);      p.rect(x,y,70,20);}
+        }
+        else if(x===280&&y>=240&&y<360)                                                       {p.fill(C.dkgray);    p.rect(x,y,70,20);}
+        else if(x>=280&&x<420&&(y===380||y===420||y===460))                                   {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if((x===350||x===490)&&(y===0||y===40||y===80))                                  {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===350&&(y===20||y===60||y===100))                                           {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else if(x===350&&y>=120&&y<240)                                                       {p.fill(C.dkgray);    p.rect(x,y,70,20);}
+        else if(x===350&&(y===240||y==280||y===320))                                          {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else if(x===350&&(y===260||y==300||y===340))                                          {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x===420&&y<120)                                                               {p.fill(C.goldlight); p.rect(x,y,70,20);}
+        else if(x===420&&(y===120||y===160||y===200||y===240||y===280||y===320))              {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===420&&(y===140||y===180||y===220||y===260||y===300||y===340))              {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else if(x===420&&y>=360&&y<480)                                                       {p.fill(C.dkgray);    p.rect(x,y,70,20);}
+        else if(x===490&&(y===20||y===60||y===100||y===140||y===180||y===220))                {p.fill(C.gold);      p.rect(x,y,70,20);}
+        else if(x===490&&(y===120||y===160||y===200))                                         {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===490&&y>=240&&y<360)                                                       {p.fill(C.beige);     p.rect(x,y,70,20);}
+        else if(x===490&&(y===360||y===400||y===440))                                         {p.fill(C.black);     p.rect(x,y,70,20);}
+        else if(x===490&&(y===380||y===420||y===460))                                         {p.fill(C.gray);      p.rect(x,y,70,20);}
+        else                                                                                   {p.fill(255);         p.rect(x,y,70,20);}
+      }
+    }
+  };
+});
+</script>
+</body>
+</html>
